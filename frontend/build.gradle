@@ -1,0 +1,113 @@
+plugins {
+    id 'java'
+    id 'base'
+    id "com.moowork.node" version "1.3.1"
+}
+
+
+def webappDir = "$projectDir"
+
+node {
+    // Version of node to use.
+    version = '14.15.5'
+
+    // Version of npm to use.
+    npmVersion = '6.14.8'
+
+    // Base URL for fetching node distributions (change if you have a mirror).
+    distBaseUrl = 'https://nodejs.org/dist'
+
+    download = false
+}
+
+task task_build_front(){
+    dependsOn "instalReact"
+}
+
+task appNpmBuild(type: NpmTask) { (3)
+    args = ['run', "build"]
+}
+
+task instalReact(type: Exec) {
+    workingDir "$webappDir"
+    inputs.dir "$webappDir"
+    group = BasePlugin.BUILD_GROUP
+    if (System.getProperty("os.name").toUpperCase().contains("WINDOWS")) {
+        commandLine "npm.cmd", "install"
+    } else {
+        commandLine "npm", "install"
+    }
+}
+
+task buildReact(type: Exec) {
+    dependsOn "instalReact"
+    workingDir "$webappDir"
+    inputs.dir "$webappDir"
+    group = BasePlugin.BUILD_GROUP
+    if (System.getProperty("os.name").toUpperCase().contains("WINDOWS")) {
+        commandLine "npm.cmd", "build"
+    } else {
+        commandLine "npm", "build"
+    }
+}
+
+npm_run_build {
+    // make sure the build task is executed only when appropriate files change
+    inputs.files fileTree('src')
+    inputs.file 'package.json'
+    inputs.file 'package-lock.json'
+    outputs.dir 'dist'
+//  outputs.dir 'build'
+//  outputs.cacheIf { true }
+}
+
+task packageFrontend(type: Zip) {
+    dependsOn 'npm_run_build'
+    baseName 'frontend'
+
+    destinationDir file("${projectDir}/build")
+    from('./index.html') {
+        into 'static'
+    }
+    from('build') {
+        into 'static'
+    }
+}
+
+task runFrontend(type: Exec) {
+    dependsOn "buildReact"
+    if (System.getProperty("os.name").toUpperCase().contains("WINDOWS")) {
+        commandLine "npm.cmd", "run start"
+    } else {
+        commandLine "npm", "run start"
+    }
+}
+
+// declare a dedicated scope for publishing the packaged JAR
+configurations {
+    npmResources
+}
+
+
+
+configurations.default.extendsFrom(configurations.npmResources)
+
+// expose the artifact created by the packaging task
+artifacts {
+    npmResources(packageFrontend.archivePath) {
+        builtBy packageFrontend
+        type 'jar'
+    }
+}
+
+assemble.dependsOn packageFrontend
+assemble.dependsOn(appNpmBuild)
+
+clean {
+    delete packageFrontend.archivePath
+    delete file("${projectDir}/dist")
+}
+
+processResources {
+    dependsOn "npm_run_build"
+}

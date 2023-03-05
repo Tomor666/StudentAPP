@@ -1,0 +1,54 @@
+HELP.md
+.gradle
+!gradle/wrapper/gradle-wrapper.jar
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+/.idea/*
+.idea
+!.idea/codeStyles
+*.iws
+*.iml
+*.ipr
+/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### H2 ###
+/db/
+/bin/
+
+### App ###
+/build/
+/frontend/node_modules
+/frontend/dist
+/frontend/build
+/frontend/package-lock.json
+/logs/
+/integration-test/
+
+package-lock.json
+
+.run
+/time_offset_mins
+
+/templates/wiremock/wiremock.jar
+
+application-local.properties
+/util/verify_os_image_fs/paths_to_verify.json

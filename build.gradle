@@ -1,0 +1,84 @@
+import org.apache.tools.ant.taskdefs.condition.Os
+import org.flywaydb.gradle.task.FlywayValidateTask
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '2.7.2'
+	id 'io.spring.dependency-management' version '1.0.15.RELEASE'
+	id "org.flywaydb.flyway" version "8.5.13"
+}
+
+group = 'pl.interal'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	annotationProcessor group: 'org.mapstruct', name: 'mapstruct-processor', version: '1.4.2.Final'
+	implementation group: 'org.mapstruct', name: 'mapstruct', version: '1.4.2.Final'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation'
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security'
+	implementation group: 'org.apache.commons', name: 'commons-lang3'
+	implementation group: 'org.apache.httpcomponents', name: 'httpclient'
+	implementation group: 'commons-net', name: 'commons-net', version: '3.6'
+	implementation group: 'io.springfox', name: 'springfox-swagger2', version: '3.0.0'
+	implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
+	implementation group: 'org.flywaydb', name: 'flyway-core'
+// https://mvnrepository.com/artifact/com.sun.mail/javax.mail
+	implementation group: 'com.sun.mail', name: 'javax.mail', version: '1.6.2'
+// https://mvnrepository.com/artifact/org.springframework.security/spring-security-oauth2-resource-server
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-oauth2-resource-server'
+
+// https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt
+	implementation group: 'io.jsonwebtoken', name: 'jjwt', version: '0.9.1'
+	runtimeOnly project(':frontend')
+	compileOnly 'org.projectlombok:lombok'
+	runtimeOnly 'org.postgresql:postgresql'
+	implementation group: 'io.springfox', name: 'springfox-swagger-ui', version: '3.0.0'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+task validateMigrations(type: FlywayValidateTask) {
+	url = 'jdbc:postgresql://localhost:5432/student_db'
+	user = 'username'
+	password = 'password'
+	driver = 'org.postgresql.Driver'
+	baselineOnMigrate = true
+	locations = ['filesystem:src/main/resources/db/migration/']
+}
+
+bootJar {
+	dependsOn 'copyFront'
+	String jarName = "studentDemoApp.jar"
+	launchScript()
+	archiveFileName = jarName
+}
+
+
+
+task copyFront(type: Copy) {
+	dependsOn ':frontend:npm_run_build'
+	from 'frontend/build'
+	into 'build/resources/main/static'
+}
+
+
+tasks.bootRun.dependsOn 'copyFront'
+tasks.jar.dependsOn 'copyFront'
+tasks.compileTestJava.dependsOn 'copyFront'
+tasks.bootJarMainClassName.dependsOn 'copyFront'
